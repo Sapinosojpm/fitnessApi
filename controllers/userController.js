@@ -4,9 +4,9 @@ const jwt = require("jsonwebtoken");
 
 exports.register = async (req, res) => {
     try {
-        const { username, email, password, isAdmin } = req.body;
+        const { username, email, password } = req.body; // ❌ Removed isAdmin from req.body
 
-        console.log("Received Data:", { username, email, password, isAdmin }); // Debugging
+        console.log("Received Data:", { username, email, password });
 
         if (!username || !email || !password) {
             return res.status(400).json({ message: "All fields are required" });
@@ -23,7 +23,7 @@ exports.register = async (req, res) => {
             username, 
             email, 
             password: hashedPassword,
-            isAdmin: isAdmin || false, // ✅ Only allow admin assignment if explicitly set
+            isAdmin: false, // ✅ Default to false for security reasons
         });
 
         await user.save();
@@ -37,6 +37,7 @@ exports.register = async (req, res) => {
 
 
 
+
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -47,13 +48,19 @@ exports.login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign(
+            { id: user._id, isAdmin: user.isAdmin }, // ✅ Store isAdmin in the token
+            process.env.JWT_SECRET, 
+            { expiresIn: "1h" }
+        );
 
-        res.json({ token });
+        res.json({ token, isAdmin: user.isAdmin }); // ✅ Return isAdmin in response
     } catch (error) {
         res.status(500).json({ message: "Server error" });
     }
 };
+
+
 
 
 exports.getUserDetails = async (req, res) => {
