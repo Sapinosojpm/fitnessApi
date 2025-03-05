@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
     const authHeader = req.header("Authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -15,6 +16,15 @@ const authMiddleware = (req, res, next) => {
         console.log("Decoded Token:", verified);
 
         req.user = verified;
+
+        // Fetch user from DB to check admin status
+        const user = await User.findById(verified.id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        req.user.isAdmin = user.isAdmin; // Store admin status
+
         next();
     } catch (error) {
         console.error("❌ JWT Verification Error:", error.message);
@@ -22,4 +32,12 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+// Middleware to restrict access to admins only
+const adminMiddleware = (req, res, next) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+    }
+    next();
+};
+
+module.exports = { authMiddleware, adminMiddleware };

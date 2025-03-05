@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 // Load environment variables
 dotenv.config();
 
-const workoutRoutes = require("./routes/workout");
+const movieRoutes = require('./routes/movieRoutes');
 const userRoutes = require("./routes/user");
 
 const app = express();
@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use("/workouts", workoutRoutes);
+app.use("/movies", movieRoutes);
 app.use("/users", userRoutes);
 
 // Connect to MongoDB
